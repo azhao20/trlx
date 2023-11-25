@@ -90,12 +90,13 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
     tokenizer.pad_token = tokenizer.eos_token
 
+    # This may or may not throw errors. If it does, comment it out.
     if not os.path.exists("rm_checkpoint"):
         os.mkdir("rm_checkpoint")
 
     training_args = TrainingArguments(
         output_dir="rm_checkpoint/",
-        num_train_epochs=5,
+        num_train_epochs=1, # 5
         logging_steps=10,
         gradient_accumulation_steps=4,
         save_strategy="steps",

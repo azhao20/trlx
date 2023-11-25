@@ -2,6 +2,7 @@ import os
 from typing import List
 
 import torch
+import torch.quantization
 from datasets import load_dataset
 from reward_model.reward_model import GPTRewardModel
 from tqdm import tqdm
@@ -30,9 +31,9 @@ SFT_MODEL_PATH = "CarperAI/openai_summarize_tldr_sft"
 config = TRLConfig(
     train=TrainConfig(
         seq_length=550,
-        epochs=50,
+        epochs=2, # 50
         total_steps=100000,
-        batch_size=4,
+        batch_size=2, # 4
         checkpoint_interval=10000,
         eval_interval=200,
         pipeline="PromptPipeline",
@@ -88,10 +89,12 @@ config = TRLConfig(
 
 if __name__ == "__main__":
     # Load the pre-trained reward model
-    rw_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
+    # rw_tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-j-6B")
+    rw_tokenizer = AutoTokenizer.from_pretrained("gpt2", use_cache=False)
     rw_tokenizer.pad_token = rw_tokenizer.eos_token
     rw_model = GPTRewardModel(SFT_MODEL_PATH)
-    rw_model.load_state_dict(torch.load(REWARD_CHECKPOINT_PATH), strict=False)
+    rw_model.load_state_dict(torch.quantization.quantize_dynamic(torch.load(REWARD_CHECKPOINT_PATH), {torch.nn.Linear}, dtype=torch.qint8), strict=False)
+    # rw_model.load_state_dict(torch.load(REWARD_CHECKPOINT_PATH), strict=False)
     rw_model.half()
     rw_model.eval()
     rw_device = torch.device("cuda:{}".format(1))  # set reward model device
